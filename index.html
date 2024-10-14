@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FindMyRemoteWorkplace</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
+    <link href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css" rel="stylesheet" />
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+        header {
+            background-color: #2b2d42;
+            color: #edf2f4;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        header h1 {
+            margin: 0;
+            font-size: 2em;
+        }
+        header p {
+            margin: 5px 0 0;
+            font-size: 1em;
+        }
+        #favourites {
+            width: 90%;
+            margin: 15px auto;
+            padding: 10px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        #favourites h2 {
+            margin-top: 0;
+            font-size: 1.5em;
+            color: #2b2d42;
+            text-align: center;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        #favourites ul {
+            list-style: none;
+            padding: 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+        #favourites ul li {
+            flex: 1 1 calc(30% - 10px);
+            background-color: #8d99ae;
+            color: #ffffff;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            text-align: center;
+            transition: background-color 0.3s;
+        }
+        #favourites ul li:hover {
+            background-color: #2b2d42;
+        }
+        #map {
+            height: 55vh;
+            width: 90%;
+            margin: 20px auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        }
+        footer {
+            background-color: #2b2d42;
+            color: #edf2f4;
+            padding: 15px;
+            text-align: center;
+            font-size: 0.9em;
+        }
+        button#locate-me {
+            display: block;
+            margin: 15px auto;
+            padding: 10px 20px;
+            background-color: #8d99ae;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        button#locate-me:hover {
+            background-color: #2b2d42;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Find My Remote Workplace</h1>
+        <p>Discover the best coffee shops for remote work in your area</p>
+    </header>
+
+    <section id="favourites">
+        <h2>Author's Favourites</h2>
+        <ul id="favourite-list">
+            <li data-lat="51.509" data-lon="-0.13">Cafe One</li>
+            <li data-lat="51.508" data-lon="-0.12">Coffee Corner</li>
+            <li data-lat="51.506" data-lon="-0.11">Work Bean</li>
+            <li data-lat="51.507" data-lon="-0.125">Remote Haven</li>
+            <li data-lat="51.505" data-lon="-0.115">The Grind Space</li>
+        </ul>
+    </section>
+
+    <div id="map"></div>
+    <button id="locate-me">Find My Location</button>
+
+    <footer>
+        <p>&copy; 2024 FindMyRemoteWorkplace</p>
+    </footer>
+
+    <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const map = new maplibregl.Map({
+                container: 'map',
+                style: 'https://tiles.openfreemap.org/styles/liberty',
+                center: [-0.1278, 51.5074], // Default to London coordinates
+                zoom: 13
+            });
+
+            // Sample data for coffee shop pins - replace with your own data
+            const coffeeShops = [
+                {
+                    name: "Cafe One",
+                    lat: 51.509,
+                    lon: -0.13,
+                    address: "123 Coffee St, London",
+                    googleMapsLink: "https://www.google.com/maps?q=51.509,-0.13",
+                    ratings: {
+                        electricity: 4,
+                        comfort: 5,
+                        wifi: 4,
+                        quietness: 3
+                    }
+                },
+                {
+                    name: "Coffee Corner",
+                    lat: 51.508,
+                    lon: -0.12,
+                    address: "456 Brew Ave, London",
+                    googleMapsLink: "https://www.google.com/maps?q=51.508,-0.12",
+                    ratings: {
+                        electricity: 3,
+                        comfort: 4,
+                        wifi: 5,
+                        quietness: 4
+                    }
+                },
+                {
+                    name: "Work Bean",
+                    lat: 51.506,
+                    lon: -0.11,
+                    address: "789 Bean Rd, London",
+                    googleMapsLink: "https://www.google.com/maps?q=51.506,-0.11",
+                    ratings: {
+                        electricity: 5,
+                        comfort: 4,
+                        wifi: 5,
+                        quietness: 5
+                    }
+                }
+            ];
+
+            coffeeShops.forEach(shop => {
+                const popupContent = `
+                    <strong>${shop.name}</strong><br>
+                    <p>${shop.address}</p>
+                    <a href="${shop.googleMapsLink}" target="_blank">View on Google Maps</a><br>
+                    <div><strong>Ratings:</strong></div>
+                    <ul>
+                        <li>Electricity Sockets: ${shop.ratings.electricity}/5</li>
+                        <li>Comfort: ${shop.ratings.comfort}/5</li>
+                        <li>WiFi: ${shop.ratings.wifi}/5</li>
+                        <li>Quietness: ${shop.ratings.quietness}/5</li>
+                    </ul>
+                `;
+                new maplibregl.Marker()
+                    .setLngLat([shop.lon, shop.lat])
+                    .setPopup(new maplibregl.Popup().setHTML(popupContent))
+                    .addTo(map);
+            });
+
+            document.getElementById('locate-me').addEventListener('click', () => {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(position => {
+                        const userLat = position.coords.latitude;
+                        const userLon = position.coords.longitude;
+                        map.flyTo({ center: [userLon, userLat], zoom: 15 });
+
+                        // Remove existing user location marker if any
+                        const existingMarker = document.querySelector('.mapboxgl-user-location-marker');
+                        if (existingMarker) {
+                            existingMarker.remove();
+                        }
+
+                        new maplibregl.Marker({ color: 'red', className: 'mapboxgl-user-location-marker' })
+                            .setLngLat([userLon, userLat])
+                            .setPopup(new maplibregl.Popup().setHTML("You are here!"))
+                            .addTo(map);
+                    }, (error) => {
+                        console.error('Error retrieving location:', error);
+                        alert('Unable to retrieve your location. Please make sure location services are enabled.');
+                    });
+                } else {
+                    alert('Geolocation is not supported by your browser.');
+                }
+            });
+
+            document.getElementById('favourite-list').addEventListener('click', (e) => {
+                if (e.target && e.target.tagName === 'LI') {
+                    const lat = parseFloat(e.target.getAttribute('data-lat'));
+                    const lon = parseFloat(e.target.getAttribute('data-lon'));
+                    map.flyTo({ center: [lon, lat], zoom: 15 });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
