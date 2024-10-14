@@ -1,0 +1,7 @@
+title|location|lat|lon|google maps link|electricity|comfort|wifi|quietness|favourite
+Cafe One|123 Coffee St, London|51.509|-0.13|https://www.google.com/maps?q=51.509,-0.13|4|5|4|3|true
+Coffee Corner|456 Brew Ave, London|51.508|-0.12|https://www.google.com/maps?q=51.508,-0.12|3|4|5|4|true
+Work Bean|789 Bean Rd, London|51.506|-0.11|https://www.google.com/maps?q=51.506,-0.11|5|4|5|5|false
+Remote Haven|101 Remote Blvd, London|51.507|-0.125|https://www.google.com/maps?q=51.507,-0.125|4|5|4|5|false
+The Grind Space|202 Focus Lane, London|51.505|-0.115|https://www.google.com/maps?q=51.505,-0.115|3|5|4|4|false
+The Eleventh Hour|17, Wardian, 1 Erebus Gdns, Wards Pl, London E14 9ED|51.50135644587995|-0.022774088954369|https://maps.app.goo.gl/vBnArgA7U1nPW2KJ7|3|3|3|3|true

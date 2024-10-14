@@ -6,6 +6,7 @@
     <title>FindMyRemoteWorkplace</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
     <link href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <style>
         body {
             font-family: 'Roboto', sans-serif;
@@ -106,13 +107,7 @@
 
     <section id="favourites">
         <h2>Author's Favourites</h2>
-        <ul id="favourite-list">
-            <li data-lat="51.509" data-lon="-0.13">Cafe One</li>
-            <li data-lat="51.508" data-lon="-0.12">Coffee Corner</li>
-            <li data-lat="51.506" data-lon="-0.11">Work Bean</li>
-            <li data-lat="51.507" data-lon="-0.125">Remote Haven</li>
-            <li data-lat="51.505" data-lon="-0.115">The Grind Space</li>
-        </ul>
+        <ul id="favourite-list"></ul>
     </section>
 
     <div id="map"></div>
@@ -132,66 +127,60 @@
                 zoom: 13
             });
 
-            // Sample data for coffee shop pins - replace with your own data
-            const coffeeShops = [
-                {
-                    name: "Cafe One",
-                    lat: 51.509,
-                    lon: -0.13,
-                    address: "123 Coffee St, London",
-                    googleMapsLink: "https://www.google.com/maps?q=51.509,-0.13",
-                    ratings: {
-                        electricity: 4,
-                        comfort: 5,
-                        wifi: 4,
-                        quietness: 3
-                    }
-                },
-                {
-                    name: "Coffee Corner",
-                    lat: 51.508,
-                    lon: -0.12,
-                    address: "456 Brew Ave, London",
-                    googleMapsLink: "https://www.google.com/maps?q=51.508,-0.12",
-                    ratings: {
-                        electricity: 3,
-                        comfort: 4,
-                        wifi: 5,
-                        quietness: 4
-                    }
-                },
-                {
-                    name: "Work Bean",
-                    lat: 51.506,
-                    lon: -0.11,
-                    address: "789 Bean Rd, London",
-                    googleMapsLink: "https://www.google.com/maps?q=51.506,-0.11",
-                    ratings: {
-                        electricity: 5,
-                        comfort: 4,
-                        wifi: 5,
-                        quietness: 5
-                    }
-                }
-            ];
+            // Load CSV data
+            Papa.parse("/public/data/locations.csv", {
+                delimiter: '|',
+                download: true,
+                header: true,
+                complete: function (results) {
+                    console.log('CSV Data:', results);
+                    const coffeeShops = results.data;
+                    const favouriteList = document.getElementById('favourite-list');
 
-            coffeeShops.forEach(shop => {
-                const popupContent = `
-                    <strong>${shop.name}</strong><br>
-                    <p>${shop.address}</p>
-                    <a href="${shop.googleMapsLink}" target="_blank">View on Google Maps</a><br>
-                    <div><strong>Ratings:</strong></div>
-                    <ul>
-                        <li>Electricity Sockets: ${shop.ratings.electricity}/5</li>
-                        <li>Comfort: ${shop.ratings.comfort}/5</li>
-                        <li>WiFi: ${shop.ratings.wifi}/5</li>
-                        <li>Quietness: ${shop.ratings.quietness}/5</li>
-                    </ul>
-                `;
-                new maplibregl.Marker()
-                    .setLngLat([shop.lon, shop.lat])
-                    .setPopup(new maplibregl.Popup().setHTML(popupContent))
-                    .addTo(map);
+                    coffeeShops.forEach(shop => {
+                        console.log('Processing shop:', shop);
+                        if (!shop.lat || !shop.lon) {
+                            console.warn('Missing latitude or longitude for shop:', shop);
+                            return;
+                        }
+
+                        const popupContent = `
+                            <strong>${shop.title}</strong><br>
+                            <p>${shop.location}</p>
+                            <a href="${shop['google maps link']}" target="_blank">View on Google Maps</a><br>
+                            <div><strong>Ratings:</strong></div>
+                            <ul>
+                                <li>Electricity Sockets: ${shop.electricity}/5</li>
+                                <li>Comfort: ${shop.comfort}/5</li>
+                                <li>WiFi: ${shop.wifi}/5</li>
+                                <li>Quietness: ${shop.quietness}/5</li>
+                            </ul>
+                        `;
+
+                        new maplibregl.Marker()
+                            .setLngLat([parseFloat(shop.lon), parseFloat(shop.lat)])
+                            .setPopup(new maplibregl.Popup().setHTML(popupContent))
+                            .addTo(map);
+
+                        // Add to favourite list if marked as favourite
+                        if (shop.favourite.toLowerCase() === 'true') {
+                            const listItem = document.createElement('li');
+                            listItem.textContent = shop.title;
+                            listItem.dataset.lat = shop.lat;
+                            listItem.dataset.lon = shop.lon;
+                            favouriteList.appendChild(listItem);
+                        }
+                    });
+
+                    // Handle favourite list clicks
+                    favouriteList.addEventListener('click', (e) => {
+                        if (e.target && e.target.tagName === 'LI') {
+                            const lat = parseFloat(e.target.getAttribute('data-lat'));
+                            const lon = parseFloat(e.target.getAttribute('data-lon'));
+                            map.flyTo({ center: [lon, lat], zoom: 15 });
+                        }
+                    });
+                }
             });
 
             document.getElementById('locate-me').addEventListener('click', () => {
@@ -217,14 +206,6 @@
                     });
                 } else {
                     alert('Geolocation is not supported by your browser.');
-                }
-            });
-
-            document.getElementById('favourite-list').addEventListener('click', (e) => {
-                if (e.target && e.target.tagName === 'LI') {
-                    const lat = parseFloat(e.target.getAttribute('data-lat'));
-                    const lon = parseFloat(e.target.getAttribute('data-lon'));
-                    map.flyTo({ center: [lon, lat], zoom: 15 });
                 }
             });
         });
