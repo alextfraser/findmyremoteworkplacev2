@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,98 +8,10 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
     <link href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-    <style>
-        body {
-            font-family: 'Roboto', sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f0f0f0;
-        }
-        header {
-            background-color: #2b2d42;
-            color: #edf2f4;
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        header h1 {
-            margin: 0;
-            font-size: 2em;
-        }
-        header p {
-            margin: 5px 0 0;
-            font-size: 1em;
-        }
-        #favourites {
-            width: 90%;
-            margin: 15px auto;
-            padding: 10px;
-            background-color: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        #favourites h2 {
-            margin-top: 0;
-            font-size: 1.5em;
-            color: #2b2d42;
-            text-align: center;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #ddd;
-        }
-        #favourites ul {
-            list-style: none;
-            padding: 0;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: center;
-        }
-        #favourites ul li {
-            flex: 1 1 calc(30% - 10px);
-            background-color: #8d99ae;
-            color: #ffffff;
-            padding: 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-            text-align: center;
-            transition: background-color 0.3s;
-        }
-        #favourites ul li:hover {
-            background-color: #2b2d42;
-        }
-        #map {
-            height: 55vh;
-            width: 90%;
-            margin: 20px auto;
-            border-radius: 10px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-        }
-        footer {
-            background-color: #2b2d42;
-            color: #edf2f4;
-            padding: 15px;
-            text-align: center;
-            font-size: 0.9em;
-        }
-        button#locate-me {
-            display: block;
-            margin: 15px auto;
-            padding: 10px 20px;
-            background-color: #8d99ae;
-            color: #ffffff;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1em;
-            transition: background-color 0.3s, transform 0.2s;
-        }
-        button#locate-me:hover {
-            background-color: #2b2d42;
-            transform: scale(1.05);
-        }
-    </style>
+    <script src="./parseGoogleMapsUrl.js"></script>
+    <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
     <header>
         <h1>Find My Remote Workplace</h1>
@@ -111,7 +24,43 @@
     </section>
 
     <div id="map"></div>
-    <button id="locate-me">Find My Location</button>
+    <div class="button-group">
+        <button id="locate-me">Find My Location</button>
+        <button id="add-location-button">Add New Location</button>
+    </div>
+
+    <div id="popup-overlay"></div>
+    <div id="add-location-popup">
+        <h3>Add a New Location</h3>
+        <label for="google-maps-url">Google Maps Full URL:</label>
+        <input type="text" id="google-maps-url" placeholder="Enter Google Maps URL" required>
+        <button id="populate-fields">Populate Fields</button>
+        
+        <p></p>
+        <label for="location-name">Location Name:</label>
+        <input type="text" id="location-name" placeholder="Location Name" required disabled>
+        <label for="latitude">Latitude:</label>
+        <input type="text" id="latitude" placeholder="Latitude" required disabled>
+        <label for="longitude">Longitude:</label>
+        <input type="text" id="longitude" placeholder="Longitude" required disabled>
+        
+        <h4>Location Reviews:</h4>
+        <label for="electricity-rating">Electricity Sockets (1-5):</label>
+        <input type="number" id="electricity-rating" min="1" max="5" step="1" placeholder="Electricity Rating" required inputmode="none">
+        
+        <label for="comfort-rating">Comfort (1-5):</label>
+        <input type="number" id="comfort-rating" min="1" max="5" step="1" placeholder="Comfort Rating" required inputmode="none">
+        
+        <label for="wifi-rating">WiFi (1-5):</label>
+        <input type="number" id="wifi-rating" min="1" max="5" step="1" placeholder="WiFi Rating" required inputmode="none">
+        
+        <label for="quietness-rating">Quietness (1-5):</label>
+        <input type="number" id="quietness-rating" min="1" max="5" step="1" placeholder="Quietness Rating" required inputmode="none">
+    
+        <button id="save-location">Save Location</button>
+        <button id="cancel-button">Cancel</button>
+    </div>
+    
 
     <footer>
         <p>&copy; 2024 FindMyRemoteWorkplace</p>
@@ -126,6 +75,59 @@
                 center: [-0.1278, 51.5074], // Default to London coordinates
                 zoom: 13
             });
+
+            const addLocationButton = document.getElementById('add-location-button');
+            const addLocationPopup = document.getElementById('add-location-popup');
+            const popupOverlay = document.getElementById('popup-overlay');
+            const cancelButton = document.getElementById('cancel-button');
+            const saveLocationButton = document.getElementById('save-location');
+            const populateFieldsButton = document.getElementById('populate-fields');
+
+            addLocationButton.addEventListener('click', () => {
+                popupOverlay.style.display = 'block';
+                addLocationPopup.style.display = 'block';
+            });
+
+            cancelButton.addEventListener('click', () => {
+                popupOverlay.style.display = 'none';
+                addLocationPopup.style.display = 'none';
+            });
+
+            popupOverlay.addEventListener('click', () => {
+                popupOverlay.style.display = 'none';
+                addLocationPopup.style.display = 'none';
+            });
+
+            populateFieldsButton.addEventListener('click', () => {
+                const googleMapsUrl = document.getElementById('google-maps-url').value;
+                if (googleMapsUrl) {
+                    fillLocationFields(googleMapsUrl);
+                }
+            });
+
+            saveLocationButton.addEventListener('click', () => {
+                const locationName = document.getElementById('location-name').value;
+                const latitude = document.getElementById('latitude').value;
+                const longitude = document.getElementById('longitude').value;
+
+                if (!latitude || !longitude || !locationName) {
+                    alert('Please fill in all required fields.');
+                    return;
+                }
+
+                addMarker(latitude, longitude, locationName);
+
+                popupOverlay.style.display = 'none';
+                addLocationPopup.style.display = 'none';
+            });
+
+            function addMarker(lat, lon, title) {
+                new maplibregl.Marker()
+                    .setLngLat([parseFloat(lon), parseFloat(lat)])
+                    .setPopup(new maplibregl.Popup().setHTML(`<strong>${title}</strong>`))
+                    .addTo(map);
+                map.flyTo({ center: [parseFloat(lon), parseFloat(lat)], zoom: 15 });
+            }
 
             // Load CSV data
             Papa.parse("/public/data/locations.csv", {
@@ -211,4 +213,5 @@
         });
     </script>
 </body>
+
 </html>
